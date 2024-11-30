@@ -1,217 +1,232 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
-public class TetrisGame extends JFrame {
-    private final int ROWS = 20;
-    private final int COLS = 10;
-    private final int TILE_SIZE = 30;
-    private TetrisFigure currentPiece, holdPiece, nextPiece;
-    private ArrayList<TetrisFigure> upcomingPieces;
+public class TetrisGame extends JPanel {
+    private static final int BOARD_WIDTH = 10;
+    private static final int BOARD_HEIGHT = 20;
+    private static final int TILE_SIZE = 30;
+
+    private TetrisPiece currentPiece;
     private Color[][] board;
-    private boolean gamePaused = false;
     private Timer timer;
-    private JPanel gamePanel, sidePanel;
 
     public TetrisGame() {
-        setTitle("Tetris");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(false);
-        initializeGame();
-    }
-
-    private void initializeGame() {
-        board = new Color[ROWS][COLS];
-        upcomingPieces = new ArrayList<>();
-        generateNextPieces();
-
-        currentPiece = nextPiece;
-        spawnNextPiece();
-
-        // Game Panel
-        gamePanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                drawBoard(g);
-                drawPiece(g, currentPiece);
-            }
-        };
-        gamePanel.setPreferredSize(new Dimension(COLS * TILE_SIZE, ROWS * TILE_SIZE));
-        gamePanel.setBackground(Color.BLACK);
-        add(gamePanel, BorderLayout.CENTER);
-
-        // Side Panel
-        sidePanel = new JPanel();
-        sidePanel.setPreferredSize(new Dimension(150, ROWS * TILE_SIZE));
-        sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
-        add(sidePanel, BorderLayout.EAST);
-
-        // Buttons
-        JButton startButton = new JButton("Start");
-        JButton pauseButton = new JButton("Pause");
-        JButton newGameButton = new JButton("New Game");
-
-        startButton.addActionListener(e -> startGame());
-        pauseButton.addActionListener(e -> pauseGame());
-        newGameButton.addActionListener(e -> newGame());
-
-        sidePanel.add(startButton);
-        sidePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidePanel.add(pauseButton);
-        sidePanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        sidePanel.add(newGameButton);
-
+        setFocusable(true);
+        initializeBoard();
+        spawnPiece();
+        initializeTimer();
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (!gamePaused) {
-                    handleKeyPress(e);
-                }
+                handleInput(e);
             }
         });
-        setFocusable(true);
-
-        pack();
-        setLocationRelativeTo(null);
     }
 
-    private void startGame() {
-        timer = new Timer(500, e -> gameTick());
+    private void initializeBoard() {
+        board = new Color[BOARD_HEIGHT][BOARD_WIDTH];
+        for (int row = 0; row < BOARD_HEIGHT; row++) {
+            for (int col = 0; col < BOARD_WIDTH; col++) {
+                board[row][col] = Color.LIGHT_GRAY; // Light gray for empty cells
+            }
+        }
+    }
+
+    private void spawnPiece() {
+        currentPiece = getRandomPiece();
+        currentPiece.setPosition(BOARD_WIDTH / 2 - 1, 0);
+        if (!canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY())) {
+            gameOver();
+        }
+    }
+
+    private TetrisPiece getRandomPiece() {
+        List<TetrisPiece> pieces = new ArrayList<>();
+        pieces.add(new LPiece());
+        pieces.add(new TPiece());
+        pieces.add(new ZPiece());
+        pieces.add(new SquarePiece());
+        pieces.add(new IPiece());
+        pieces.add(new ReverseLPiece());
+        pieces.add(new ReverseZPiece());
+        return pieces.get(new Random().nextInt(pieces.size()));
+    }
+
+    private void initializeTimer() {
+        timer = new Timer(500, e -> {
+            if (!movePieceDown()) {
+                placePieceOnBoard();
+                clearFullRows();
+                spawnPiece();
+            }
+            repaint();
+        });
         timer.start();
     }
 
-    private void pauseGame() {
-        if (timer != null) {
-            if (gamePaused) {
-                timer.start();
-            } else {
-                timer.stop();
-            }
-            gamePaused = !gamePaused;
+    private void handleInput(KeyEvent e) {
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_LEFT:
+                if (canPlacePiece(currentPiece, currentPiece.getX() - 1, currentPiece.getY())) {
+                    currentPiece.setPosition(currentPiece.getX() - 1, currentPiece.getY());
+                }
+                break;
+            case KeyEvent.VK_RIGHT:
+                if (canPlacePiece(currentPiece, currentPiece.getX() + 1, currentPiece.getY())) {
+                    currentPiece.setPosition(currentPiece.getX() + 1, currentPiece.getY());
+                }
+                break;
+            case KeyEvent.VK_DOWN:
+                movePieceDown();
+                break;
+            case KeyEvent.VK_UP:
+                TetrisPiece rotatedPiece = getRotatedPiece();
+                if (canPlacePiece(rotatedPiece, rotatedPiece.getX(), rotatedPiece.getY())) {
+                    currentPiece.rotate();
+                }
+                break;
+            case KeyEvent.VK_SPACE:
+                dropPieceToBottom();
+                break;
         }
-    }
-
-    private void newGame() {
-        board = new Color[ROWS][COLS];
-        upcomingPieces.clear();
-        generateNextPieces();
-        spawnNextPiece();
-        holdPiece = null;
         repaint();
-        startGame();
     }
 
-    private void generateNextPieces() {
-        Random random = new Random();
-        for (int i = 0; i < 3; i++) {
-            upcomingPieces.add(generateRandomPiece(random));
+    private boolean movePieceDown() {
+        if (canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY() + 1)) {
+            currentPiece.setPosition(currentPiece.getX(), currentPiece.getY() + 1);
+            return true;
         }
-        nextPiece = upcomingPieces.remove(0);
+        return false;
     }
 
-    private TetrisFigure generateRandomPiece(Random random) {
-        int pieceType = random.nextInt(7); // Assuming you have 7 subclasses for Tetris pieces
-        // Replace the following lines with actual Tetris piece subclasses:
-        switch (pieceType) {
-            case 0:
-                return new LFigure();
-            case 1:
-                return new ReverseLFigure();
-            case 2:
-                return new LFigure();
-            case 3:
-                return new ReverseZFigure();
-            case 4:
-                return new SquareFigure();
-            case 5:
-                return new LFigure();
-            case 6:
-                return new LFigure();
-            default:
-                return new LFigure();
+    private void dropPieceToBottom() {
+        while (canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY() + 1)) {
+            currentPiece.setPosition(currentPiece.getX(), currentPiece.getY() + 1);
+        }
+        placePieceOnBoard();
+        clearFullRows();
+        spawnPiece();
+    }
+
+    private boolean canPlacePiece(TetrisPiece piece, int x, int y) {
+        int[][] shape = piece.getShape();
+        for (int row = 0; row < shape.length; row++) {
+            for (int col = 0; col < shape[0].length; col++) {
+                if (shape[row][col] != 0) {
+                    int newX = x + col;
+                    int newY = y + row;
+                    if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT
+                            || (newY >= 0 && board[newY][newX] != Color.LIGHT_GRAY)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private TetrisPiece getRotatedPiece() {
+        TetrisPiece rotatedPiece = null;
+        try {
+            rotatedPiece = currentPiece.getClass().getDeclaredConstructor().newInstance();
+            rotatedPiece.setPosition(currentPiece.getX(), currentPiece.getY());
+            rotatedPiece.rotate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return rotatedPiece;
+    }
+
+    private void placePieceOnBoard() {
+        int[][] shape = currentPiece.getShape();
+        for (int row = 0; row < shape.length; row++) {
+            for (int col = 0; col < shape[0].length; col++) {
+                if (shape[row][col] != 0) {
+                    int x = currentPiece.getX() + col;
+                    int y = currentPiece.getY() + row;
+                    if (y >= 0) {
+                        board[y][x] = currentPiece.getColor();
+                    }
+                }
+            }
         }
     }
 
-    private void spawnNextPiece() {
-        currentPiece = nextPiece;
-        currentPiece.setPosition(COLS / 2 - 1, 0);
-        if (upcomingPieces.isEmpty()) {
-            generateNextPieces();
+    private void clearFullRows() {
+        for (int row = 0; row < BOARD_HEIGHT; row++) {
+            boolean fullRow = true;
+            for (int col = 0; col < BOARD_WIDTH; col++) {
+                if (board[row][col] == Color.LIGHT_GRAY) {
+                    fullRow = false;
+                    break;
+                }
+            }
+            if (fullRow) {
+                for (int r = row; r > 0; r--) {
+                    board[r] = board[r - 1];
+                }
+                board[0] = new Color[BOARD_WIDTH];
+                for (int col = 0; col < BOARD_WIDTH; col++) {
+                    board[0][col] = Color.LIGHT_GRAY;
+                }
+            }
         }
-        nextPiece = upcomingPieces.remove(0);
+    }
+
+    private void gameOver() {
+        timer.stop();
+        JOptionPane.showMessageDialog(this, "Game Over!", "Tetris", JOptionPane.INFORMATION_MESSAGE);
+        System.exit(0);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        drawBoard(g);
+        drawPiece(g);
     }
 
     private void drawBoard(Graphics g) {
-        for (int row = 0; row < ROWS; row++) {
-            for (int col = 0; col < COLS; col++) {
-                if (board[row][col] != null) {
-                    g.setColor(board[row][col]);
-                    g.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
+        for (int row = 0; row < BOARD_HEIGHT; row++) {
+            for (int col = 0; col < BOARD_WIDTH; col++) {
+                g.setColor(board[row][col]);
+                g.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                g.setColor(Color.DARK_GRAY);
+                g.drawRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }
     }
 
-    private void drawPiece(Graphics g, TetrisFigure piece) {
-        if (piece == null) return;
-        int[][] shape = piece.getShape();
-        g.setColor(piece.getColor());
-        for (int row = 0; row < shape.length; row++) {
-            for (int col = 0; col < shape[row].length; col++) {
-                if (shape[row][col] != 0) {
-                    int x = (piece.getX() + col) * TILE_SIZE;
-                    int y = (piece.getY() + row) * TILE_SIZE;
-                    g.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+    private void drawPiece(Graphics g) {
+        if (currentPiece != null) {
+            g.setColor(currentPiece.getColor());
+            int[][] shape = currentPiece.getShape();
+            for (int row = 0; row < shape.length; row++) {
+                for (int col = 0; col < shape[0].length; col++) {
+                    if (shape[row][col] != 0) {
+                        int x = currentPiece.getX() + col;
+                        int y = currentPiece.getY() + row;
+                        if (y >= 0) {
+                            g.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                        }
+                    }
                 }
             }
         }
-    }
-
-    private void handleKeyPress(KeyEvent e) {
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_LEFT -> movePiece(-1, 0);
-            case KeyEvent.VK_RIGHT -> movePiece(1, 0);
-            case KeyEvent.VK_DOWN -> movePiece(0, 1);
-            case KeyEvent.VK_UP -> currentPiece.rotate();
-            case KeyEvent.VK_SPACE -> dropPiece();
-            case KeyEvent.VK_C -> holdCurrentPiece();
-        }
-        repaint();
-    }
-
-    private void movePiece(int dx, int dy) {
-        // Add collision detection here
-        currentPiece.setPosition(currentPiece.getX() + dx, currentPiece.getY() + dy);
-    }
-
-    private void dropPiece() {
-        // Add logic for fast dropping a piece
-    }
-
-    private void holdCurrentPiece() {
-        if (holdPiece == null) {
-            holdPiece = currentPiece;
-            spawnNextPiece();
-        } else {
-            TetrisFigure temp = currentPiece;
-            currentPiece = holdPiece;
-            holdPiece = temp;
-        }
-    }
-
-    private void gameTick() {
-        movePiece(0, 1);
-        repaint();
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            TetrisGame game = new TetrisGame();
-            game.setVisible(true);
-        });
+        JFrame frame = new JFrame("Tetris");
+        TetrisGame game = new TetrisGame();
+        frame.add(game);
+        frame.setSize(BOARD_WIDTH * TILE_SIZE + 15, BOARD_HEIGHT * TILE_SIZE + 38); // Account for window decorations
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null); // Center the window
+        frame.setVisible(true);
     }
 }

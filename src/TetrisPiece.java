@@ -1,11 +1,11 @@
 import java.awt.Color;
 
-public abstract class TetrisFigure {
+public abstract class TetrisPiece {
     protected int[][] shape;
     protected Color color;
     protected int x, y;
 
-    public TetrisFigure() {
+    public TetrisPiece() {
         initializeShape();
         initializeColor();
     }
