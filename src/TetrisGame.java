@@ -204,21 +204,27 @@ public class TetrisGame extends JPanel {
 
     private void drawPiece(Graphics g) {
         if (currentPiece != null) {
-            g.setColor(currentPiece.getColor());
             int[][] shape = currentPiece.getShape();
             for (int row = 0; row < shape.length; row++) {
                 for (int col = 0; col < shape[0].length; col++) {
                     if (shape[row][col] != 0) {
                         int x = currentPiece.getX() + col;
                         int y = currentPiece.getY() + row;
-                        if (y >= 0) {
+                        if (y >= 0) { // Ensure not to draw outside the board
+                            // Fill the square with the piece color
+                            g.setColor(currentPiece.getColor());
                             g.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+                            // Draw the outline of the square
+                            g.setColor(Color.DARK_GRAY); // Color for the grid outline
+                            g.drawRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                         }
                     }
                 }
             }
         }
     }
+
 
     public static void main(String[] args) {
         JFrame frame = new JFrame("Tetris");
