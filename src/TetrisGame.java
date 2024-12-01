@@ -31,7 +31,7 @@ public class TetrisGame extends JPanel {
         board = new Color[BOARD_HEIGHT][BOARD_WIDTH];
         for (int row = 0; row < BOARD_HEIGHT; row++) {
             for (int col = 0; col < BOARD_WIDTH; col++) {
-                board[row][col] = Color.LIGHT_GRAY; // Light gray for empty cells
+                board[row][col] = Color.LIGHT_GRAY;
             }
         }
     }
@@ -85,8 +85,10 @@ public class TetrisGame extends JPanel {
                 break;
             case KeyEvent.VK_UP:
                 TetrisPiece rotatedPiece = getRotatedPiece();
+                adjustPiecePositionToBounds(rotatedPiece);
                 if (canPlacePiece(rotatedPiece, rotatedPiece.getX(), rotatedPiece.getY())) {
                     currentPiece.rotate();
+                    adjustPiecePositionToBounds(currentPiece);
                 }
                 break;
             case KeyEvent.VK_SPACE:
@@ -103,6 +105,29 @@ public class TetrisGame extends JPanel {
         }
         return false;
     }
+
+    private void adjustPiecePositionToBounds(TetrisPiece piece) {
+        int minX = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+
+        int[][] shape = piece.getShape();
+        for (int row = 0; row < shape.length; row++) {
+            for (int col = 0; col < shape[0].length; col++) {
+                if (shape[row][col] != 0) {
+                    int x = piece.getX() + col;
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                }
+            }
+        }
+
+        if (minX < 0) {
+            piece.setPosition(piece.getX() - minX, piece.getY());
+        } else if (maxX >= BOARD_WIDTH) {
+            piece.setPosition(piece.getX() - (maxX - BOARD_WIDTH + 1), piece.getY());
+        }
+    }
+
 
     private void dropPieceToBottom() {
         while (canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY() + 1)) {
@@ -210,13 +235,11 @@ public class TetrisGame extends JPanel {
                     if (shape[row][col] != 0) {
                         int x = currentPiece.getX() + col;
                         int y = currentPiece.getY() + row;
-                        if (y >= 0) { // Ensure not to draw outside the board
-                            // Fill the square with the piece color
+                        if (y >= 0) {
                             g.setColor(currentPiece.getColor());
                             g.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
 
-                            // Draw the outline of the square
-                            g.setColor(Color.DARK_GRAY); // Color for the grid outline
+                            g.setColor(Color.DARK_GRAY);
                             g.drawRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                         }
                     }
@@ -225,14 +248,13 @@ public class TetrisGame extends JPanel {
         }
     }
 
-
     public static void main(String[] args) {
         JFrame frame = new JFrame("Tetris");
         TetrisGame game = new TetrisGame();
         frame.add(game);
-        frame.setSize(BOARD_WIDTH * TILE_SIZE + 15, BOARD_HEIGHT * TILE_SIZE + 38); // Account for window decorations
+        frame.setSize(BOARD_WIDTH * TILE_SIZE + 15, BOARD_HEIGHT * TILE_SIZE + 38);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLocationRelativeTo(null); // Center the window
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 }
