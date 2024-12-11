@@ -1,3 +1,5 @@
+package base;
+
 import java.awt.Color;
 
 public abstract class TetrisPiece {
