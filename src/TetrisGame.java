@@ -4,6 +4,8 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import pieces.*;
+import base.TetrisPiece;
 
 public class TetrisGame extends JPanel {
     private static final int BOARD_WIDTH = 10;
@@ -13,12 +15,14 @@ public class TetrisGame extends JPanel {
     private TetrisPiece currentPiece;
     private Color[][] board;
     private Timer timer;
+    private int score;
 
     public TetrisGame() {
         setFocusable(true);
         initializeBoard();
         spawnPiece();
         initializeTimer();
+        score = 0;
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -128,7 +132,6 @@ public class TetrisGame extends JPanel {
         }
     }
 
-
     private void dropPieceToBottom() {
         while (canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY() + 1)) {
             currentPiece.setPosition(currentPiece.getX(), currentPiece.getY() + 1);
@@ -192,6 +195,7 @@ public class TetrisGame extends JPanel {
                 }
             }
             if (fullRow) {
+                score += 100; // Increment score for each cleared row
                 for (int r = row; r > 0; r--) {
                     board[r] = board[r - 1];
                 }
@@ -205,24 +209,31 @@ public class TetrisGame extends JPanel {
 
     private void gameOver() {
         timer.stop();
-        JOptionPane.showMessageDialog(this, "Game Over!", "Tetris", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, "Game Over!\nScore: " + score, "Tetris", JOptionPane.INFORMATION_MESSAGE);
         System.exit(0);
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        drawScore(g);
         drawBoard(g);
         drawPiece(g);
+    }
+
+    private void drawScore(Graphics g) {
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("Score: " + score, 10, 25);
     }
 
     private void drawBoard(Graphics g) {
         for (int row = 0; row < BOARD_HEIGHT; row++) {
             for (int col = 0; col < BOARD_WIDTH; col++) {
                 g.setColor(board[row][col]);
-                g.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                g.fillRect(col * TILE_SIZE, row * TILE_SIZE + 30, TILE_SIZE, TILE_SIZE);
                 g.setColor(Color.DARK_GRAY);
-                g.drawRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                g.drawRect(col * TILE_SIZE, row * TILE_SIZE + 30, TILE_SIZE, TILE_SIZE);
             }
         }
     }
@@ -237,10 +248,10 @@ public class TetrisGame extends JPanel {
                         int y = currentPiece.getY() + row;
                         if (y >= 0) {
                             g.setColor(currentPiece.getColor());
-                            g.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                            g.fillRect(x * TILE_SIZE, y * TILE_SIZE + 30, TILE_SIZE, TILE_SIZE);
 
                             g.setColor(Color.DARK_GRAY);
-                            g.drawRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                            g.drawRect(x * TILE_SIZE, y * TILE_SIZE + 30, TILE_SIZE, TILE_SIZE);
                         }
                     }
                 }
@@ -252,9 +263,10 @@ public class TetrisGame extends JPanel {
         JFrame frame = new JFrame("Tetris");
         TetrisGame game = new TetrisGame();
         frame.add(game);
-        frame.setSize(BOARD_WIDTH * TILE_SIZE + 15, BOARD_HEIGHT * TILE_SIZE + 38);
+        frame.setSize(BOARD_WIDTH * TILE_SIZE + 15, BOARD_HEIGHT * TILE_SIZE + 70);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH); // Maximize window
         frame.setVisible(true);
     }
 }

@@ -1,6 +1,9 @@
-import java.awt.Color;
+package pieces;
 
-class TPiece extends TetrisPiece {
+import java.awt.Color;
+import base.TetrisPiece;
+
+public class TPiece extends TetrisPiece {
     @Override
     protected void initializeShape() {
         shape = new int[][] {
