@@ -10,12 +10,13 @@ import base.TetrisPiece;
 public class TetrisGame extends JPanel {
     private static final int BOARD_WIDTH = 10;
     private static final int BOARD_HEIGHT = 20;
-    private static final int TILE_SIZE = 30;
+    private static final int TILE_SIZE = 40;
 
     private TetrisPiece currentPiece;
     private Color[][] board;
     private Timer timer;
     private int score;
+    private boolean isPaused;
 
     public TetrisGame() {
         setFocusable(true);
@@ -23,6 +24,8 @@ public class TetrisGame extends JPanel {
         spawnPiece();
         initializeTimer();
         score = 0;
+        isPaused = false;
+
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -62,17 +65,23 @@ public class TetrisGame extends JPanel {
 
     private void initializeTimer() {
         timer = new Timer(500, e -> {
-            if (!movePieceDown()) {
-                placePieceOnBoard();
-                clearFullRows();
-                spawnPiece();
+            if (!isPaused) {
+                if (!movePieceDown()) {
+                    placePieceOnBoard();
+                    clearFullRows();
+                    spawnPiece();
+                }
+                repaint();
             }
-            repaint();
         });
         timer.start();
     }
 
     private void handleInput(KeyEvent e) {
+        if (isPaused && e.getKeyCode() != KeyEvent.VK_P) {
+            return;
+        }
+
         switch (e.getKeyCode()) {
             case KeyEvent.VK_LEFT:
                 if (canPlacePiece(currentPiece, currentPiece.getX() - 1, currentPiece.getY())) {
@@ -98,7 +107,15 @@ public class TetrisGame extends JPanel {
             case KeyEvent.VK_SPACE:
                 dropPieceToBottom();
                 break;
+            case KeyEvent.VK_P:
+                togglePause();
+                break;
         }
+        repaint();
+    }
+
+    private void togglePause() {
+        isPaused = !isPaused;
         repaint();
     }
 
@@ -195,7 +212,7 @@ public class TetrisGame extends JPanel {
                 }
             }
             if (fullRow) {
-                score += 100; // Increment score for each cleared row
+                score += 100;
                 for (int r = row; r > 0; r--) {
                     board[r] = board[r - 1];
                 }
@@ -216,24 +233,36 @@ public class TetrisGame extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        drawBackground(g);
         drawScore(g);
         drawBoard(g);
         drawPiece(g);
+        if (isPaused) {
+            drawPauseOverlay(g);
+        }
+    }
+
+    private void drawBackground(Graphics g) {
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, getWidth(), getHeight());
     }
 
     private void drawScore(Graphics g) {
-        g.setColor(Color.BLACK);
-        g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("Score: " + score, 10, 25);
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 24));
+        g.drawString("Score: " + score, 10, 30);
     }
 
     private void drawBoard(Graphics g) {
+        int xOffset = (getWidth() - BOARD_WIDTH * TILE_SIZE) / 2;
+        int yOffset = (getHeight() - BOARD_HEIGHT * TILE_SIZE) / 2;
+
         for (int row = 0; row < BOARD_HEIGHT; row++) {
             for (int col = 0; col < BOARD_WIDTH; col++) {
                 g.setColor(board[row][col]);
-                g.fillRect(col * TILE_SIZE, row * TILE_SIZE + 30, TILE_SIZE, TILE_SIZE);
+                g.fillRect(xOffset + col * TILE_SIZE, yOffset + row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                 g.setColor(Color.DARK_GRAY);
-                g.drawRect(col * TILE_SIZE, row * TILE_SIZE + 30, TILE_SIZE, TILE_SIZE);
+                g.drawRect(xOffset + col * TILE_SIZE, yOffset + row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }
     }
@@ -241,6 +270,9 @@ public class TetrisGame extends JPanel {
     private void drawPiece(Graphics g) {
         if (currentPiece != null) {
             int[][] shape = currentPiece.getShape();
+            int xOffset = (getWidth() - BOARD_WIDTH * TILE_SIZE) / 2;
+            int yOffset = (getHeight() - BOARD_HEIGHT * TILE_SIZE) / 2;
+
             for (int row = 0; row < shape.length; row++) {
                 for (int col = 0; col < shape[0].length; col++) {
                     if (shape[row][col] != 0) {
@@ -248,10 +280,9 @@ public class TetrisGame extends JPanel {
                         int y = currentPiece.getY() + row;
                         if (y >= 0) {
                             g.setColor(currentPiece.getColor());
-                            g.fillRect(x * TILE_SIZE, y * TILE_SIZE + 30, TILE_SIZE, TILE_SIZE);
-
+                            g.fillRect(xOffset + x * TILE_SIZE, yOffset + y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                             g.setColor(Color.DARK_GRAY);
-                            g.drawRect(x * TILE_SIZE, y * TILE_SIZE + 30, TILE_SIZE, TILE_SIZE);
+                            g.drawRect(xOffset + x * TILE_SIZE, yOffset + y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
                         }
                     }
                 }
@@ -259,14 +290,20 @@ public class TetrisGame extends JPanel {
         }
     }
 
+    private void drawPauseOverlay(Graphics g) {
+        g.setColor(new Color(0, 0, 0, 150));
+        g.fillRect(0, 0, getWidth(), getHeight());
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 48));
+        g.drawString("Paused", getWidth() / 2 - 100, getHeight() / 2);
+    }
+
     public static void main(String[] args) {
         JFrame frame = new JFrame("Tetris");
         TetrisGame game = new TetrisGame();
         frame.add(game);
-        frame.setSize(BOARD_WIDTH * TILE_SIZE + 15, BOARD_HEIGHT * TILE_SIZE + 70);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLocationRelativeTo(null);
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH); // Maximize window
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH); // Start maximized
         frame.setVisible(true);
     }
 }
