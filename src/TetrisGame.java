@@ -4,6 +4,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
 import pieces.*;
 import base.TetrisPiece;
 
@@ -17,6 +18,7 @@ public class TetrisGame extends JPanel {
     private Timer timer;
     private int score;
     private boolean isPaused;
+    private boolean gameOverFlag = false;
 
     public TetrisGame() {
         setFocusable(true);
@@ -225,9 +227,31 @@ public class TetrisGame extends JPanel {
     }
 
     private void gameOver() {
+        if (gameOverFlag) {
+            return;
+        }
+
+        gameOverFlag = true;
+
         timer.stop();
-        JOptionPane.showMessageDialog(this, "Game Over!\nScore: " + score, "Tetris", JOptionPane.INFORMATION_MESSAGE);
-        System.exit(0);
+
+        int option = JOptionPane.showOptionDialog(this, "Game Over!\nScore: " + score, "Tetris",
+                JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, new Object[]{"Play Again", "Quit"}, null);
+
+        if (option == JOptionPane.YES_OPTION) {
+            resetGame();
+        } else {
+            System.exit(0);
+        }
+    }
+
+
+    private void resetGame() {
+        gameOverFlag = false;
+        initializeBoard();
+        score = 0;
+        spawnPiece();
+        timer.start();
     }
 
     @Override
@@ -303,7 +327,7 @@ public class TetrisGame extends JPanel {
         TetrisGame game = new TetrisGame();
         frame.add(game);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setExtendedState(JFrame.MAXIMIZED_BOTH); // Start maximized
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setVisible(true);
     }
 }
