@@ -17,7 +17,6 @@ public class TetrisGame extends JPanel {
     private Color[][] board;
     private Timer timer;
     private int score;
-    private boolean isPaused;
     private boolean gameOverFlag = false;
 
     public TetrisGame() {
@@ -26,7 +25,6 @@ public class TetrisGame extends JPanel {
         spawnPiece();
         initializeTimer();
         score = 0;
-        isPaused = false;
 
         addKeyListener(new KeyAdapter() {
             @Override
@@ -67,23 +65,17 @@ public class TetrisGame extends JPanel {
 
     private void initializeTimer() {
         timer = new Timer(500, e -> {
-            if (!isPaused) {
-                if (!movePieceDown()) {
-                    placePieceOnBoard();
-                    clearFullRows();
-                    spawnPiece();
-                }
-                repaint();
+            if (!movePieceDown()) {
+                placePieceOnBoard();
+                clearFullRows();
+                spawnPiece();
             }
+            repaint();
         });
         timer.start();
     }
 
     private void handleInput(KeyEvent e) {
-        if (isPaused && e.getKeyCode() != KeyEvent.VK_P) {
-            return;
-        }
-
         switch (e.getKeyCode()) {
             case KeyEvent.VK_LEFT:
                 if (canPlacePiece(currentPiece, currentPiece.getX() - 1, currentPiece.getY())) {
@@ -109,15 +101,7 @@ public class TetrisGame extends JPanel {
             case KeyEvent.VK_SPACE:
                 dropPieceToBottom();
                 break;
-            case KeyEvent.VK_P:
-                togglePause();
-                break;
         }
-        repaint();
-    }
-
-    private void togglePause() {
-        isPaused = !isPaused;
         repaint();
     }
 
@@ -245,7 +229,6 @@ public class TetrisGame extends JPanel {
         }
     }
 
-
     private void resetGame() {
         gameOverFlag = false;
         initializeBoard();
@@ -261,9 +244,6 @@ public class TetrisGame extends JPanel {
         drawScore(g);
         drawBoard(g);
         drawPiece(g);
-        if (isPaused) {
-            drawPauseOverlay(g);
-        }
     }
 
     private void drawBackground(Graphics g) {
@@ -312,14 +292,6 @@ public class TetrisGame extends JPanel {
                 }
             }
         }
-    }
-
-    private void drawPauseOverlay(Graphics g) {
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRect(0, 0, getWidth(), getHeight());
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 48));
-        g.drawString("Paused", getWidth() / 2 - 100, getHeight() / 2);
     }
 
     public static void main(String[] args) {
