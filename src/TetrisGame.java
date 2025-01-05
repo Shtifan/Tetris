@@ -31,11 +31,33 @@ public class TetrisGame extends JFrame {
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         JPanel mainContainer = new JPanel(new BorderLayout());
+        mainContainer.setBackground(Color.BLACK);
+
         gamePanel = new GamePanel();
+
+        // Create buttons and add them directly to the gamePanel
+        JButton newGameButton = createButton("New Game", e -> resetGame());
+        pauseButton = createButton("Pause", e -> togglePause());
+
+        // Set the layout of the gamePanel to null for manual positioning
+        gamePanel.setLayout(null);
+
+        // Position the buttons manually
+        newGameButton.setBounds(10, 10, 120, 40);
+        pauseButton.setBounds(140, 10, 120, 40);
+
+        // Add buttons to the gamePanel
+        gamePanel.add(newGameButton);
+        gamePanel.add(pauseButton);
+
+        // Add gamePanel to main container
         mainContainer.add(gamePanel, BorderLayout.CENTER);
 
-        createControlPanel();
-        mainContainer.add(controlPanel, BorderLayout.EAST);
+        // Create side panel for score, held piece, and next pieces with transparent background
+        JPanel sidePanel = new JPanel();
+        sidePanel.setPreferredSize(new Dimension(200, getHeight()));
+        sidePanel.setOpaque(false);  // Make panel transparent
+        mainContainer.add(sidePanel, BorderLayout.EAST);
 
         add(mainContainer);
         initializeTimer();
@@ -44,25 +66,9 @@ public class TetrisGame extends JFrame {
         gamePanel.requestFocusInWindow();
     }
 
-    private void createControlPanel() {
-        controlPanel = new JPanel();
-        controlPanel.setPreferredSize(new Dimension(200, getHeight()));
-        controlPanel.setBackground(new Color(40, 40, 40));
-        controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
-
-        JButton newGameButton = createButton("New Game", e -> resetGame());
-        pauseButton = createButton("Pause", e -> togglePause());
-
-        controlPanel.add(Box.createVerticalStrut(50));
-        controlPanel.add(newGameButton);
-        controlPanel.add(Box.createVerticalStrut(20));
-        controlPanel.add(pauseButton);
-    }
-
     private JButton createButton(String text, ActionListener actionListener) {
         JButton button = new JButton(text);
-        button.setAlignmentX(Component.CENTER_ALIGNMENT);
-        button.setMaximumSize(new Dimension(160, 40));
+        button.setPreferredSize(new Dimension(120, 40));
         button.setFont(new Font("Arial", Font.BOLD, 16));
         button.setFocusable(false);
         button.addActionListener(actionListener);
@@ -280,11 +286,11 @@ public class TetrisGame extends JFrame {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             drawBackground(g);
-            drawScore(g);
             drawBoard(g);
             drawPiece(g);
             drawHeldPiece(g);
             drawNextPieces(g);
+            drawScore(g); // Moved this line to ensure the score is drawn last
             if (isPaused) drawPauseOverlay(g);
             if (isGameOver) drawGameOverOverlay(g);
         }
@@ -297,7 +303,12 @@ public class TetrisGame extends JFrame {
         private void drawScore(Graphics g) {
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 24));
-            g.drawString("Score: " + score, 10, 30);
+
+            // Calculate the position for the score at the bottom left
+            int x = 10; // Left margin
+            int y = getHeight() - 10; // Bottom margin
+
+            g.drawString("Score: " + score, x, y);
         }
 
         private void drawBoard(Graphics g) {
@@ -362,7 +373,7 @@ public class TetrisGame extends JFrame {
 
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 18));
-            g.drawString("Next Pieces:", xOffset, yOffset + 70);
+            g.drawString("Next Pieces:", xOffset, yOffset + 80);
 
             int index = 0;
             for (TetrisPiece piece : nextPieces) {
