@@ -32,6 +32,7 @@ public class TetrisGame extends JFrame {
     private void initializeGame() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setUndecorated(true);
         nextPieces = new ArrayList<>();
         score = 0;
         isPaused = false;
@@ -40,8 +41,10 @@ public class TetrisGame extends JFrame {
     }
 
     private void setupUI() {
-        JPanel mainContainer = new JPanel(new BorderLayout());
+        JPanel mainContainer = new JPanel(new BorderLayout(0, 0));
         mainContainer.setBackground(Color.BLACK);
+
+        getRootPane().setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         gamePanel = new GamePanel();
         gamePanel.setLayout(null);
@@ -49,20 +52,25 @@ public class TetrisGame extends JFrame {
         JButton newGameButton = createButton("New Game", e -> resetGame());
         pauseButton = createButton("Pause", e -> togglePause());
 
+        JButton exitButton = createButton("Exit", e -> System.exit(0));
+        exitButton.setBounds(270, 10, 120, 40);
+
         newGameButton.setBounds(10, 10, 120, 40);
         pauseButton.setBounds(140, 10, 120, 40);
 
         gamePanel.add(newGameButton);
         gamePanel.add(pauseButton);
+        gamePanel.add(exitButton);
 
         JPanel sidePanel = new JPanel();
         sidePanel.setPreferredSize(new Dimension(200, getHeight()));
         sidePanel.setOpaque(false);
+        sidePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         mainContainer.add(gamePanel, BorderLayout.CENTER);
         mainContainer.add(sidePanel, BorderLayout.EAST);
 
-        add(mainContainer);
+        setContentPane(mainContainer);
         setVisible(true);
         gamePanel.requestFocusInWindow();
     }
@@ -148,8 +156,8 @@ public class TetrisGame extends JFrame {
 
         private void handleKeyPress(int keyCode) {
             switch (keyCode) {
-                case KeyEvent.VK_LEFT -> movePiece(-1, 0);
-                case KeyEvent.VK_RIGHT -> movePiece(1, 0);
+                case KeyEvent.VK_LEFT -> movePiece(-1);
+                case KeyEvent.VK_RIGHT -> movePiece(1);
                 case KeyEvent.VK_DOWN -> movePieceDown();
                 case KeyEvent.VK_UP -> rotatePiece();
                 case KeyEvent.VK_SPACE -> dropPieceToBottom();
@@ -172,7 +180,7 @@ public class TetrisGame extends JFrame {
                 nextPieces.add(getRandomPiece());
             }
 
-            currentPiece = nextPieces.remove(0);
+            currentPiece = nextPieces.removeFirst();
 
             while (nextPieces.size() < 3) {
                 nextPieces.add(getRandomPiece());
@@ -223,9 +231,9 @@ public class TetrisGame extends JFrame {
             }
         }
 
-        private void movePiece(int dx, int dy) {
-            if (canPlacePiece(currentPiece, currentPiece.getX() + dx, currentPiece.getY() + dy)) {
-                currentPiece.setPosition(currentPiece.getX() + dx, currentPiece.getY() + dy);
+        private void movePiece(int dx) {
+            if (canPlacePiece(currentPiece, currentPiece.getX() + dx, currentPiece.getY())) {
+                currentPiece.setPosition(currentPiece.getX() + dx, currentPiece.getY());
             }
         }
 
@@ -260,7 +268,10 @@ public class TetrisGame extends JFrame {
         }
 
         private void dropPieceToBottom() {
-            while (movePieceDown()) ;
+            boolean canMoveDown = true;
+            while (canMoveDown) {
+                canMoveDown = movePieceDown();
+            }
             placePieceOnBoard();
             clearFullRows();
             spawnPiece();
@@ -394,9 +405,7 @@ public class TetrisGame extends JFrame {
                         int x = currentPiece.getX() + col;
                         int y = currentPiece.getY() + row;
                         if (y >= 0) {
-                            drawTile(g, currentPiece.getColor(),
-                                    xOffset + x * TILE_SIZE,
-                                    yOffset + y * TILE_SIZE);
+                            drawTile(g, currentPiece.getColor(), xOffset + x * TILE_SIZE, yOffset + y * TILE_SIZE);
                         }
                     }
                 }
@@ -435,9 +444,7 @@ public class TetrisGame extends JFrame {
             for (int row = 0; row < shape.length; row++) {
                 for (int col = 0; col < shape[0].length; col++) {
                     if (shape[row][col] != 0) {
-                        drawTile(g, piece.getColor(),
-                                xOffset + col * TILE_SIZE,
-                                yOffset + row * TILE_SIZE);
+                        drawTile(g, piece.getColor(), xOffset + col * TILE_SIZE, yOffset + row * TILE_SIZE);
                     }
                 }
             }
