@@ -1,9 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.ArrayList;
 import java.util.Random;
 
 import pieces.*;
@@ -15,30 +13,41 @@ public class TetrisGame extends JFrame {
     private static final int TILE_SIZE = 40;
 
     private GamePanel gamePanel;
-    private JPanel controlPanel;
     private Timer timer;
     private int score;
-    private boolean isPaused = false;
+    private boolean isPaused;
+    private boolean isGameOver;
     private JButton pauseButton;
-    private TetrisPiece heldPiece = null;
-    private boolean canHoldPiece = true;
-    private Queue<TetrisPiece> nextPieces = new LinkedList<>();
-    private boolean isGameOver = false;
+    private TetrisPiece heldPiece;
+    private boolean canHoldPiece;
+    private ArrayList<TetrisPiece> nextPieces;
 
     public TetrisGame() {
         super("Tetris");
+        initializeGame();
+        setupUI();
+        initializeTimer();
+    }
+
+    private void initializeGame() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
+        nextPieces = new ArrayList<>();
+        score = 0;
+        isPaused = false;
+        isGameOver = false;
+        canHoldPiece = true;
+    }
 
+    private void setupUI() {
         JPanel mainContainer = new JPanel(new BorderLayout());
         mainContainer.setBackground(Color.BLACK);
 
         gamePanel = new GamePanel();
+        gamePanel.setLayout(null);
 
         JButton newGameButton = createButton("New Game", e -> resetGame());
         pauseButton = createButton("Pause", e -> togglePause());
-
-        gamePanel.setLayout(null);
 
         newGameButton.setBounds(10, 10, 120, 40);
         pauseButton.setBounds(140, 10, 120, 40);
@@ -46,16 +55,14 @@ public class TetrisGame extends JFrame {
         gamePanel.add(newGameButton);
         gamePanel.add(pauseButton);
 
-        mainContainer.add(gamePanel, BorderLayout.CENTER);
-
         JPanel sidePanel = new JPanel();
         sidePanel.setPreferredSize(new Dimension(200, getHeight()));
         sidePanel.setOpaque(false);
+
+        mainContainer.add(gamePanel, BorderLayout.CENTER);
         mainContainer.add(sidePanel, BorderLayout.EAST);
 
         add(mainContainer);
-        initializeTimer();
-
         setVisible(true);
         gamePanel.requestFocusInWindow();
     }
@@ -73,12 +80,11 @@ public class TetrisGame extends JFrame {
         if (isGameOver) return;
 
         isPaused = !isPaused;
+        pauseButton.setText(isPaused ? "Resume" : "Pause");
         if (isPaused) {
             timer.stop();
-            pauseButton.setText("Resume");
         } else {
             timer.start();
-            pauseButton.setText("Pause");
         }
         gamePanel.repaint();
     }
@@ -99,34 +105,57 @@ public class TetrisGame extends JFrame {
     private void resetGame() {
         isPaused = false;
         isGameOver = false;
-        gamePanel.initializeBoard();
         score = 0;
         heldPiece = null;
         canHoldPiece = true;
         nextPieces.clear();
+
         for (int i = 0; i < 3; i++) {
             nextPieces.add(gamePanel.getRandomPiece());
         }
+
+        gamePanel.initializeBoard();
         gamePanel.spawnPiece();
         timer.start();
+        pauseButton.setText("Pause");
         gamePanel.requestFocusInWindow();
     }
+
 
     private class GamePanel extends JPanel {
         private TetrisPiece currentPiece;
         private Color[][] board;
+        private final Random random;
 
         public GamePanel() {
+            random = new Random();
             setFocusable(true);
             initializeBoard();
             spawnPiece();
+            setupKeyListener();
+        }
 
+        private void setupKeyListener() {
             addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
-                    handleInput(e);
+                    if (!isPaused && !isGameOver) {
+                        handleKeyPress(e.getKeyCode());
+                    }
                 }
             });
+        }
+
+        private void handleKeyPress(int keyCode) {
+            switch (keyCode) {
+                case KeyEvent.VK_LEFT -> movePiece(-1, 0);
+                case KeyEvent.VK_RIGHT -> movePiece(1, 0);
+                case KeyEvent.VK_DOWN -> movePieceDown();
+                case KeyEvent.VK_UP -> rotatePiece();
+                case KeyEvent.VK_SPACE -> dropPieceToBottom();
+                case KeyEvent.VK_C -> holdPiece();
+            }
+            repaint();
         }
 
         public void initializeBoard() {
@@ -140,39 +169,43 @@ public class TetrisGame extends JFrame {
 
         public void spawnPiece() {
             if (nextPieces.isEmpty()) {
-                for (int i = 0; i < 3; i++) {
-                    nextPieces.add(getRandomPiece());
-                }
+                nextPieces.add(getRandomPiece());
             }
-            currentPiece = nextPieces.poll();
-            nextPieces.add(getRandomPiece());
+
+            currentPiece = nextPieces.remove(0);
+
+            while (nextPieces.size() < 3) {
+                nextPieces.add(getRandomPiece());
+            }
+
             currentPiece.setPosition(BOARD_WIDTH / 2 - 1, 0);
+
             if (!canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY())) {
-                timer.stop();
-                isGameOver = true;
-                JOptionPane.showMessageDialog(TetrisGame.this, "Game Over", "Tetris", JOptionPane.INFORMATION_MESSAGE);
+                gameOver();
             }
+        }
+
+
+        private void gameOver() {
+            timer.stop();
+            isGameOver = true;
+            JOptionPane.showMessageDialog(TetrisGame.this,
+                    "Game Over! Final Score: " + score,
+                    "Tetris",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
 
         public TetrisPiece getRandomPiece() {
-            List<TetrisPiece> pieces = List.of(
-                    new LPiece(), new TPiece(), new ZPiece(), new SquarePiece(), new IPiece(), new ReverseLPiece(), new ReverseZPiece()
-            );
-            return pieces.get(new Random().nextInt(pieces.size()));
-        }
+            ArrayList<TetrisPiece> pieces = new ArrayList<>();
+            pieces.add(new LPiece());
+            pieces.add(new TPiece());
+            pieces.add(new ZPiece());
+            pieces.add(new SquarePiece());
+            pieces.add(new IPiece());
+            pieces.add(new ReverseLPiece());
+            pieces.add(new ReverseZPiece());
 
-        private void handleInput(KeyEvent e) {
-            if (isPaused || isGameOver) return;
-
-            switch (e.getKeyCode()) {
-                case KeyEvent.VK_LEFT -> movePiece(-1, 0);
-                case KeyEvent.VK_RIGHT -> movePiece(1, 0);
-                case KeyEvent.VK_DOWN -> movePieceDown();
-                case KeyEvent.VK_UP -> rotatePiece();
-                case KeyEvent.VK_SPACE -> dropPieceToBottom();
-                case KeyEvent.VK_C -> holdPiece();
-            }
-            repaint();
+            return pieces.get(random.nextInt(pieces.size()));
         }
 
         private void holdPiece() {
@@ -196,7 +229,7 @@ public class TetrisGame extends JFrame {
             }
         }
 
-        private boolean movePieceDown() {
+        public boolean movePieceDown() {
             if (canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY() + 1)) {
                 currentPiece.setPosition(currentPiece.getX(), currentPiece.getY() + 1);
                 return true;
@@ -206,19 +239,32 @@ public class TetrisGame extends JFrame {
 
         private void rotatePiece() {
             currentPiece.rotate();
-
             if (!canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY())) {
-                currentPiece.rotate();
-                currentPiece.rotate();
-                currentPiece.rotate();
+                if (!tryWallKick()) {
+                    for (int i = 0; i < 3; i++) {
+                        currentPiece.rotate();
+                    }
+                }
             }
         }
 
+        private boolean tryWallKick() {
+            int[] offsets = {1, -1, 2, -2};
+            for (int offset : offsets) {
+                if (canPlacePiece(currentPiece, currentPiece.getX() + offset, currentPiece.getY())) {
+                    currentPiece.setPosition(currentPiece.getX() + offset, currentPiece.getY());
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void dropPieceToBottom() {
-            while (movePieceDown());
+            while (movePieceDown()) ;
             placePieceOnBoard();
             clearFullRows();
             spawnPiece();
+            canHoldPiece = true;
         }
 
         private boolean canPlacePiece(TetrisPiece piece, int x, int y) {
@@ -243,9 +289,10 @@ public class TetrisGame extends JFrame {
         }
 
         public void placePieceOnBoard() {
-            for (int row = 0; row < currentPiece.getShape().length; row++) {
-                for (int col = 0; col < currentPiece.getShape()[0].length; col++) {
-                    if (currentPiece.getShape()[row][col] != 0) {
+            int[][] shape = currentPiece.getShape();
+            for (int row = 0; row < shape.length; row++) {
+                for (int col = 0; col < shape[0].length; col++) {
+                    if (shape[row][col] != 0) {
                         int x = currentPiece.getX() + col;
                         int y = currentPiece.getY() + row;
                         if (y >= 0) {
@@ -257,11 +304,21 @@ public class TetrisGame extends JFrame {
         }
 
         public void clearFullRows() {
-            for (int row = 0; row < BOARD_HEIGHT; row++) {
+            int rowsCleared = 0;
+            for (int row = BOARD_HEIGHT - 1; row >= 0; row--) {
                 if (isRowFull(row)) {
                     removeRow(row);
-                    score += 100;
+                    rowsCleared++;
+                    row++;
                 }
+            }
+            updateScore(rowsCleared);
+        }
+
+        private void updateScore(int rowsCleared) {
+            int[] multipliers = {0, 100, 300, 500, 800};
+            if (rowsCleared > 0) {
+                score += multipliers[Math.min(rowsCleared, 4)];
             }
         }
 
@@ -275,9 +332,7 @@ public class TetrisGame extends JFrame {
         }
 
         private void removeRow(int row) {
-            for (int r = row; r > 0; r--) {
-                board[r] = board[r - 1];
-            }
+            System.arraycopy(board, 0, board, 1, row);
             board[0] = new Color[BOARD_WIDTH];
             for (int col = 0; col < BOARD_WIDTH; col++) {
                 board[0][col] = Color.LIGHT_GRAY;
@@ -305,11 +360,7 @@ public class TetrisGame extends JFrame {
         private void drawScore(Graphics g) {
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 24));
-
-            int x = 10;
-            int y = getHeight() - 10;
-
-            g.drawString("Score: " + score, x, y);
+            g.drawString("Score: " + score, 10, getHeight() - 10);
         }
 
         private void drawBoard(Graphics g) {
@@ -318,28 +369,34 @@ public class TetrisGame extends JFrame {
 
             for (int row = 0; row < BOARD_HEIGHT; row++) {
                 for (int col = 0; col < BOARD_WIDTH; col++) {
-                    g.setColor(board[row][col]);
-                    g.fillRect(xOffset + col * TILE_SIZE, yOffset + row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                    g.setColor(Color.DARK_GRAY);
-                    g.drawRect(xOffset + col * TILE_SIZE, yOffset + row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    drawTile(g, board[row][col], xOffset + col * TILE_SIZE, yOffset + row * TILE_SIZE);
                 }
             }
         }
 
+        private void drawTile(Graphics g, Color color, int x, int y) {
+            g.setColor(color);
+            g.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+            g.setColor(Color.DARK_GRAY);
+            g.drawRect(x, y, TILE_SIZE, TILE_SIZE);
+        }
+
         private void drawPiece(Graphics g) {
+            if (currentPiece == null) return;
+
             int xOffset = (getWidth() - BOARD_WIDTH * TILE_SIZE) / 2;
             int yOffset = (getHeight() - BOARD_HEIGHT * TILE_SIZE) / 2;
+            int[][] shape = currentPiece.getShape();
 
-            for (int row = 0; row < currentPiece.getShape().length; row++) {
-                for (int col = 0; col < currentPiece.getShape()[0].length; col++) {
-                    if (currentPiece.getShape()[row][col] != 0) {
+            for (int row = 0; row < shape.length; row++) {
+                for (int col = 0; col < shape[0].length; col++) {
+                    if (shape[row][col] != 0) {
                         int x = currentPiece.getX() + col;
                         int y = currentPiece.getY() + row;
                         if (y >= 0) {
-                            g.setColor(currentPiece.getColor());
-                            g.fillRect(xOffset + x * TILE_SIZE, yOffset + y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                            g.setColor(Color.DARK_GRAY);
-                            g.drawRect(xOffset + x * TILE_SIZE, yOffset + y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                            drawTile(g, currentPiece.getColor(),
+                                    xOffset + x * TILE_SIZE,
+                                    yOffset + y * TILE_SIZE);
                         }
                     }
                 }
@@ -352,19 +409,10 @@ public class TetrisGame extends JFrame {
 
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 18));
-            g.drawString("Held Piece (keybind c):", xOffset, yOffset);
+            g.drawString("Held Piece (C):", xOffset, yOffset);
 
             if (heldPiece != null) {
-                for (int row = 0; row < heldPiece.getShape().length; row++) {
-                    for (int col = 0; col < heldPiece.getShape()[0].length; col++) {
-                        if (heldPiece.getShape()[row][col] != 0) {
-                            g.setColor(heldPiece.getColor());
-                            g.fillRect(xOffset + col * TILE_SIZE, yOffset + 20 + row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                            g.setColor(Color.DARK_GRAY);
-                            g.drawRect(xOffset + col * TILE_SIZE, yOffset + 20 + row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                        }
-                    }
-                }
+                drawPiecePreview(g, heldPiece, xOffset, yOffset + 20);
             }
         }
 
@@ -376,45 +424,43 @@ public class TetrisGame extends JFrame {
             g.setFont(new Font("Arial", Font.BOLD, 18));
             g.drawString("Next Pieces:", xOffset, yOffset + 80);
 
-            int index = 0;
-            for (TetrisPiece piece : nextPieces) {
-                yOffset += 100;
-                for (int row = 0; row < piece.getShape().length; row++) {
-                    for (int col = 0; col < piece.getShape()[0].length; col++) {
-                        if (piece.getShape()[row][col] != 0) {
-                            g.setColor(piece.getColor());
-                            g.fillRect(xOffset + col * TILE_SIZE, yOffset + row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                            g.setColor(Color.DARK_GRAY);
-                            g.drawRect(xOffset + col * TILE_SIZE, yOffset + row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                        }
+            int spacing = 100;
+            for (int i = 0; i < nextPieces.size(); i++) {
+                drawPiecePreview(g, nextPieces.get(i), xOffset, yOffset + spacing * (i + 1));
+            }
+        }
+
+        private void drawPiecePreview(Graphics g, TetrisPiece piece, int xOffset, int yOffset) {
+            int[][] shape = piece.getShape();
+            for (int row = 0; row < shape.length; row++) {
+                for (int col = 0; col < shape[0].length; col++) {
+                    if (shape[row][col] != 0) {
+                        drawTile(g, piece.getColor(),
+                                xOffset + col * TILE_SIZE,
+                                yOffset + row * TILE_SIZE);
                     }
                 }
-                index++;
             }
         }
 
         private void drawPauseOverlay(Graphics g) {
-            g.setColor(new Color(0, 0, 0, 180));
-            g.fillRect(0, 0, getWidth(), getHeight());
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, 36));
-            String pausedText = "PAUSED";
-            FontMetrics fm = g.getFontMetrics();
-            int textX = (getWidth() - fm.stringWidth(pausedText)) / 2;
-            int textY = getHeight() / 2;
-            g.drawString(pausedText, textX, textY);
+            drawOverlay(g, "PAUSED");
         }
 
         private void drawGameOverOverlay(Graphics g) {
+            drawOverlay(g, "GAME OVER");
+        }
+
+        private void drawOverlay(Graphics g, String text) {
             g.setColor(new Color(0, 0, 0, 180));
             g.fillRect(0, 0, getWidth(), getHeight());
+
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 36));
-            String gameOverText = "GAME OVER";
             FontMetrics fm = g.getFontMetrics();
-            int textX = (getWidth() - fm.stringWidth(gameOverText)) / 2;
+            int textX = (getWidth() - fm.stringWidth(text)) / 2;
             int textY = getHeight() / 2;
-            g.drawString(gameOverText, textX, textY);
+            g.drawString(text, textX, textY);
         }
     }
 
