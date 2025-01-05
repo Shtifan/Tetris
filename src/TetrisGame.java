@@ -35,28 +35,22 @@ public class TetrisGame extends JFrame {
 
         gamePanel = new GamePanel();
 
-        // Create buttons and add them directly to the gamePanel
         JButton newGameButton = createButton("New Game", e -> resetGame());
         pauseButton = createButton("Pause", e -> togglePause());
 
-        // Set the layout of the gamePanel to null for manual positioning
         gamePanel.setLayout(null);
 
-        // Position the buttons manually
         newGameButton.setBounds(10, 10, 120, 40);
         pauseButton.setBounds(140, 10, 120, 40);
 
-        // Add buttons to the gamePanel
         gamePanel.add(newGameButton);
         gamePanel.add(pauseButton);
 
-        // Add gamePanel to main container
         mainContainer.add(gamePanel, BorderLayout.CENTER);
 
-        // Create side panel for score, held piece, and next pieces with transparent background
         JPanel sidePanel = new JPanel();
         sidePanel.setPreferredSize(new Dimension(200, getHeight()));
-        sidePanel.setOpaque(false);  // Make panel transparent
+        sidePanel.setOpaque(false);
         mainContainer.add(sidePanel, BorderLayout.EAST);
 
         add(mainContainer);
@@ -290,7 +284,7 @@ public class TetrisGame extends JFrame {
             drawPiece(g);
             drawHeldPiece(g);
             drawNextPieces(g);
-            drawScore(g); // Moved this line to ensure the score is drawn last
+            drawScore(g);
             if (isPaused) drawPauseOverlay(g);
             if (isGameOver) drawGameOverOverlay(g);
         }
@@ -304,9 +298,8 @@ public class TetrisGame extends JFrame {
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 24));
 
-            // Calculate the position for the score at the bottom left
-            int x = 10; // Left margin
-            int y = getHeight() - 10; // Bottom margin
+            int x = 10;
+            int y = getHeight() - 10;
 
             g.drawString("Score: " + score, x, y);
         }
