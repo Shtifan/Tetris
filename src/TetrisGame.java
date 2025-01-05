@@ -206,26 +206,34 @@ public class TetrisGame extends JFrame {
 
         private void rotatePiece() {
             currentPiece.rotate();
+
             if (!canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY())) {
+                currentPiece.rotate();
+                currentPiece.rotate();
                 currentPiece.rotate();
             }
         }
 
         private void dropPieceToBottom() {
-            while (movePieceDown()) ;
+            while (movePieceDown());
             placePieceOnBoard();
             clearFullRows();
             spawnPiece();
         }
 
         private boolean canPlacePiece(TetrisPiece piece, int x, int y) {
-            for (int row = 0; row < piece.getShape().length; row++) {
-                for (int col = 0; col < piece.getShape()[0].length; col++) {
-                    if (piece.getShape()[row][col] != 0) {
+            int[][] shape = piece.getShape();
+            for (int row = 0; row < shape.length; row++) {
+                for (int col = 0; col < shape[0].length; col++) {
+                    if (shape[row][col] != 0) {
                         int newX = x + col;
                         int newY = y + row;
-                        if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT
-                                || (newY >= 0 && board[newY][newX] != Color.LIGHT_GRAY)) {
+
+                        if (newX < 0 || newX >= BOARD_WIDTH || newY >= BOARD_HEIGHT) {
+                            return false;
+                        }
+
+                        if (newY >= 0 && board[newY][newX] != Color.LIGHT_GRAY) {
                             return false;
                         }
                     }
