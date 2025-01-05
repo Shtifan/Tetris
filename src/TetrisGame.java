@@ -344,7 +344,7 @@ public class TetrisGame extends JFrame {
 
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 18));
-            g.drawString("Held Piece:", xOffset, yOffset);
+            g.drawString("Held Piece (keybind c):", xOffset, yOffset);
 
             if (heldPiece != null) {
                 for (int row = 0; row < heldPiece.getShape().length; row++) {
