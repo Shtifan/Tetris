@@ -155,15 +155,29 @@ public class TetrisGame extends JFrame {
         }
 
         private void handleKeyPress(int keyCode) {
-            switch (keyCode) {
-                case KeyEvent.VK_LEFT -> movePiece(-1);
-                case KeyEvent.VK_RIGHT -> movePiece(1);
-                case KeyEvent.VK_DOWN -> movePieceDown();
-                case KeyEvent.VK_UP -> rotatePiece();
-                case KeyEvent.VK_SPACE -> dropPieceToBottom();
-                case KeyEvent.VK_C -> holdPiece();
+            if (!isPaused && !isGameOver) {
+                switch (keyCode) {
+                    case KeyEvent.VK_LEFT:
+                        movePiece(-1);
+                        break;
+                    case KeyEvent.VK_RIGHT:
+                        movePiece(1);
+                        break;
+                    case KeyEvent.VK_DOWN:
+                        movePieceDown();
+                        break;
+                    case KeyEvent.VK_UP:
+                        rotatePiece();
+                        break;
+                    case KeyEvent.VK_SPACE:
+                        dropPieceToBottom();
+                        break;
+                    case KeyEvent.VK_C:
+                        holdPiece();
+                        break;
+                }
+                repaint();
             }
-            repaint();
         }
 
         public void initializeBoard() {
@@ -180,7 +194,7 @@ public class TetrisGame extends JFrame {
                 nextPieces.add(getRandomPiece());
             }
 
-            currentPiece = nextPieces.removeFirst();
+            currentPiece = nextPieces.remove(0);
 
             while (nextPieces.size() < 3) {
                 nextPieces.add(getRandomPiece());
@@ -197,10 +211,7 @@ public class TetrisGame extends JFrame {
         private void gameOver() {
             timer.stop();
             isGameOver = true;
-            JOptionPane.showMessageDialog(TetrisGame.this,
-                    "Game Over! Final Score: " + score,
-                    "Tetris",
-                    JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(TetrisGame.this, "Game Over! Final Score: " + score, "Tetris", JOptionPane.INFORMATION_MESSAGE);
         }
 
         public TetrisPiece getRandomPiece() {
