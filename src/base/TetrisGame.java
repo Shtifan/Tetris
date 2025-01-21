@@ -1,10 +1,9 @@
+package base;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-
-import pieces.*;
-import base.TetrisPiece;
 
 public class TetrisGame extends JFrame {
     private GamePanel gamePanel;

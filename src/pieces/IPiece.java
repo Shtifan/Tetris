@@ -1,7 +1,7 @@
 package pieces;
 
-import java.awt.Color;
 import base.TetrisPiece;
+import java.awt.Color;
 
 public class IPiece extends TetrisPiece {
     @Override

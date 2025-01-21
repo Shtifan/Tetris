@@ -1,3 +1,5 @@
+package base;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -6,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import pieces.*;
-import base.TetrisPiece;
 
 public class GamePanel extends JPanel {
     private static final int BOARD_WIDTH = 10;
