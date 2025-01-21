@@ -9,3 +9,7 @@ git clone https://github.com/Shtifan/Tetris
 # Contributors 
 
 Stefan Stoyanov and Radostina Todorova
+
+# Versions
+
+jdk21
