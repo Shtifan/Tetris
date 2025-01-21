@@ -1,15 +1,13 @@
-# Tetris
+# Tetris Game
 
-Tetris game
+## Instalation
 
-# Instalation
+Intellij ide
 
-git clone https://github.com/Shtifan/Tetris
+JDK21
 
-# Contributors 
+`git clone https://github.com/Shtifan/Tetris`
+
+## Contributors 
 
 Stefan Stoyanov and Radostina Todorova
-
-# Versions
-
-jdk21
