@@ -46,24 +46,23 @@ public class TetrisGame extends JFrame {
 
         JButton newGameButton = createButton("New Game", e -> resetGame());
         pauseButton = createButton("Pause", e -> togglePause());
-
+        JButton autoplayButton = createButton("Autoplay", e -> {
+        });
         JButton exitButton = createButton("Exit", e -> System.exit(0));
-        exitButton.setBounds(270, 10, 120, 40);
 
         newGameButton.setBounds(10, 10, 120, 40);
         pauseButton.setBounds(140, 10, 120, 40);
+        exitButton.setBounds(270, 10, 120, 40);
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        autoplayButton.setBounds((int) screenSize.getWidth() - 130, 10, 120, 40);
 
         gamePanel.add(newGameButton);
         gamePanel.add(pauseButton);
+        gamePanel.add(autoplayButton);
         gamePanel.add(exitButton);
 
-        JPanel sidePanel = new JPanel();
-        sidePanel.setPreferredSize(new Dimension(200, getHeight()));
-        sidePanel.setOpaque(false);
-        sidePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-
         mainContainer.add(gamePanel, BorderLayout.CENTER);
-        mainContainer.add(sidePanel, BorderLayout.EAST);
 
         setContentPane(mainContainer);
         setVisible(true);

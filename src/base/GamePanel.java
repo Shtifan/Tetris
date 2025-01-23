@@ -365,4 +365,5 @@ public class GamePanel extends JPanel {
         int textY = getHeight() / 2;
         g.drawString(text, textX, textY);
     }
+
 }
