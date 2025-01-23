@@ -4,7 +4,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import java.util.Random;
 
 import pieces.*;
@@ -75,14 +74,22 @@ public class GamePanel extends JPanel {
     }
 
     public void spawnPiece() {
-        if (tetrisGame.getNextPieces().isEmpty()) {
-            tetrisGame.getNextPieces().add(getRandomPiece());
+        if (tetrisGame.getNextPiecesCount() == 0) {
+            tetrisGame.getNextPieces()[0] = getRandomPiece();
+            tetrisGame.setNextPiecesCount(tetrisGame.getNextPiecesCount() + 1);
         }
 
-        currentPiece = tetrisGame.getNextPieces().remove(0);
+        currentPiece = tetrisGame.getNextPieces()[0];
 
-        while (tetrisGame.getNextPieces().size() < 3) {
-            tetrisGame.getNextPieces().add(getRandomPiece());
+        for (int i = 0; i < tetrisGame.getNextPiecesCount() - 1; i++) {
+            tetrisGame.getNextPieces()[i] = tetrisGame.getNextPieces()[i + 1];
+        }
+        tetrisGame.getNextPieces()[tetrisGame.getNextPiecesCount() - 1] = null;
+        tetrisGame.setNextPiecesCount(tetrisGame.getNextPiecesCount() - 1);
+
+        while (tetrisGame.getNextPiecesCount() < 3) {
+            tetrisGame.getNextPieces()[tetrisGame.getNextPiecesCount()] = getRandomPiece();
+            tetrisGame.setNextPiecesCount(tetrisGame.getNextPiecesCount() + 1);
         }
 
         currentPiece.setPosition(BOARD_WIDTH / 2 - 1, 0);
@@ -99,16 +106,9 @@ public class GamePanel extends JPanel {
     }
 
     public TetrisPiece getRandomPiece() {
-        ArrayList<TetrisPiece> pieces = new ArrayList<>();
-        pieces.add(new LPiece());
-        pieces.add(new TPiece());
-        pieces.add(new ZPiece());
-        pieces.add(new SquarePiece());
-        pieces.add(new IPiece());
-        pieces.add(new ReverseLPiece());
-        pieces.add(new ReverseZPiece());
+        TetrisPiece[] pieces = {new LPiece(), new TPiece(), new ZPiece(), new SquarePiece(), new IPiece(), new ReverseLPiece(), new ReverseZPiece()};
 
-        return pieces.get(random.nextInt(pieces.size()));
+        return pieces[random.nextInt(pieces.length)];
     }
 
     private void holdPiece() {
@@ -329,8 +329,9 @@ public class GamePanel extends JPanel {
         g.drawString("Next Pieces:", xOffset, yOffset + 80);
 
         int spacing = 100;
-        for (int i = 0; i < tetrisGame.getNextPieces().size(); i++) {
-            drawPiecePreview(g, tetrisGame.getNextPieces().get(i), xOffset, yOffset + spacing * (i + 1));
+        TetrisPiece[] nextPieces = tetrisGame.getNextPieces();
+        for (int i = 0; i < tetrisGame.getNextPiecesCount(); i++) {
+            drawPiecePreview(g, nextPieces[i], xOffset, yOffset + spacing * (i + 1));
         }
     }
 

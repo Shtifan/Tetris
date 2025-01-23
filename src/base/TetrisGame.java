@@ -3,7 +3,6 @@ package base;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 public class TetrisGame extends JFrame {
     private GamePanel gamePanel;
@@ -14,7 +13,8 @@ public class TetrisGame extends JFrame {
     private JButton pauseButton;
     private TetrisPiece heldPiece;
     private boolean canHoldPiece;
-    private ArrayList<TetrisPiece> nextPieces;
+    private TetrisPiece[] nextPieces;
+    private int nextPiecesCount;
 
     public TetrisGame() {
         super("Tetris");
@@ -27,7 +27,8 @@ public class TetrisGame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setUndecorated(true);
-        nextPieces = new ArrayList<>();
+        nextPieces = new TetrisPiece[3];
+        nextPiecesCount = 0;
         score = 0;
         isPaused = false;
         isGameOver = false;
@@ -110,10 +111,10 @@ public class TetrisGame extends JFrame {
         score = 0;
         heldPiece = null;
         canHoldPiece = true;
-        nextPieces.clear();
+        nextPiecesCount = 0;
 
         for (int i = 0; i < 3; i++) {
-            nextPieces.add(gamePanel.getRandomPiece());
+            nextPieces[nextPiecesCount++] = gamePanel.getRandomPiece();
         }
 
         gamePanel.initializeBoard();
@@ -131,8 +132,16 @@ public class TetrisGame extends JFrame {
         return isGameOver;
     }
 
-    public ArrayList<TetrisPiece> getNextPieces() {
+    public TetrisPiece[] getNextPieces() {
         return nextPieces;
+    }
+
+    public int getNextPiecesCount() {
+        return nextPiecesCount;
+    }
+
+    public void setNextPiecesCount(int nextPiecesCount) {
+        this.nextPiecesCount = nextPiecesCount;
     }
 
     public Timer getTimer() {
