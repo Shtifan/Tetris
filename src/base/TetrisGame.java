@@ -9,7 +9,7 @@ public class TetrisGame extends JFrame {
     private Timer timer;
     private int score;
     private boolean isPaused;
-    private boolean isGameOver;
+    private boolean gameOver;
     private JButton pauseButton;
     private TetrisPiece heldPiece;
     private boolean canHoldPiece;
@@ -31,7 +31,7 @@ public class TetrisGame extends JFrame {
         nextPiecesCount = 0;
         score = 0;
         isPaused = false;
-        isGameOver = false;
+        gameOver = false;
         canHoldPiece = true;
     }
 
@@ -46,9 +46,12 @@ public class TetrisGame extends JFrame {
 
         JButton newGameButton = createButton("New Game", e -> resetGame());
         pauseButton = createButton("Pause", e -> togglePause());
-        JButton autoplayButton = createButton("Autoplay", e -> {
-        });
+        JButton autoplayButton = createButton("Autoplay", null);
         JButton exitButton = createButton("Exit", e -> System.exit(0));
+
+        AutoPlay autoplay = new AutoPlay(this, gamePanel, autoplayButton);
+
+        autoplayButton.addActionListener(e -> autoplay.toggleAutoplay());
 
         newGameButton.setBounds(10, 10, 120, 40);
         pauseButton.setBounds(140, 10, 120, 40);
@@ -79,7 +82,7 @@ public class TetrisGame extends JFrame {
     }
 
     private void togglePause() {
-        if (isGameOver) return;
+        if (gameOver) return;
 
         isPaused = !isPaused;
         pauseButton.setText(isPaused ? "Resume" : "Pause");
@@ -104,9 +107,9 @@ public class TetrisGame extends JFrame {
         timer.start();
     }
 
-    private void resetGame() {
+    public void resetGame() {
         isPaused = false;
-        isGameOver = false;
+        gameOver = false;
         score = 0;
         heldPiece = null;
         canHoldPiece = true;
@@ -128,7 +131,7 @@ public class TetrisGame extends JFrame {
     }
 
     public boolean isGameOver() {
-        return isGameOver;
+        return gameOver;
     }
 
     public TetrisPiece[] getNextPieces() {

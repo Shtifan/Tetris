@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Arrays;
 import java.util.Random;
 
 import pieces.*;
@@ -25,6 +26,10 @@ public class GamePanel extends JPanel {
         initializeBoard();
         spawnPiece();
         setupKeyListener();
+    }
+
+    public Color[][] getBoard() {
+        return board;
     }
 
     private void setupKeyListener() {
@@ -54,7 +59,7 @@ public class GamePanel extends JPanel {
                     rotatePiece();
                     break;
                 case KeyEvent.VK_SPACE:
-                    dropPieceToBottom();
+                    dropPiece();
                     break;
                 case KeyEvent.VK_C:
                     holdPiece();
@@ -74,6 +79,10 @@ public class GamePanel extends JPanel {
     }
 
     public void spawnPiece() {
+        if (tetrisGame.isGameOver()) {
+            return;
+        }
+
         if (tetrisGame.getNextPiecesCount() == 0) {
             tetrisGame.getNextPieces()[0] = getRandomPiece();
             tetrisGame.setNextPiecesCount(tetrisGame.getNextPiecesCount() + 1);
@@ -102,6 +111,8 @@ public class GamePanel extends JPanel {
     private void gameOver() {
         tetrisGame.getTimer().stop();
         tetrisGame.setCanHoldPiece(false);
+        Arrays.fill(tetrisGame.getNextPieces(), null);
+        tetrisGame.setNextPiecesCount(0);
         JOptionPane.showMessageDialog(tetrisGame, "Game Over! Final Score: " + tetrisGame.getScore(), "Tetris", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -126,7 +137,7 @@ public class GamePanel extends JPanel {
         }
     }
 
-    private void movePiece(int dx) {
+    public void movePiece(int dx) {
         if (canPlacePiece(currentPiece, currentPiece.getX() + dx, currentPiece.getY())) {
             currentPiece.setPosition(currentPiece.getX() + dx, currentPiece.getY());
         }
@@ -140,7 +151,7 @@ public class GamePanel extends JPanel {
         return false;
     }
 
-    private void rotatePiece() {
+    public void rotatePiece() {
         currentPiece.rotate();
         if (!canPlacePiece(currentPiece, currentPiece.getX(), currentPiece.getY())) {
             if (!tryWallKick()) {
@@ -162,7 +173,11 @@ public class GamePanel extends JPanel {
         return false;
     }
 
-    private void dropPieceToBottom() {
+    private void dropPiece() {
+        if (tetrisGame.isGameOver()) {
+            return;
+        }
+
         boolean canMoveDown = true;
         while (canMoveDown) {
             canMoveDown = movePieceDown();
@@ -255,7 +270,6 @@ public class GamePanel extends JPanel {
         drawNextPieces(g);
         drawScore(g);
         if (tetrisGame.isPaused()) drawPauseOverlay(g);
-        if (tetrisGame.isGameOver()) drawGameOverOverlay(g);
     }
 
     private void drawBackground(Graphics g) {
@@ -347,22 +361,14 @@ public class GamePanel extends JPanel {
     }
 
     private void drawPauseOverlay(Graphics g) {
-        drawOverlay(g, "PAUSED");
-    }
-
-    private void drawGameOverOverlay(Graphics g) {
-        drawOverlay(g, "GAME OVER");
-    }
-
-    private void drawOverlay(Graphics g, String text) {
         g.setColor(new Color(0, 0, 0, 180));
         g.fillRect(0, 0, getWidth(), getHeight());
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 36));
         FontMetrics fm = g.getFontMetrics();
-        int textX = (getWidth() - fm.stringWidth(text)) / 2;
+        int textX = (getWidth() - fm.stringWidth("PAUSED")) / 2;
         int textY = getHeight() / 2;
-        g.drawString(text, textX, textY);
+        g.drawString("PAUSED", textX, textY);
     }
 }
