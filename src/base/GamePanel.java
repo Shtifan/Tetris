@@ -108,14 +108,6 @@ public class GamePanel extends JPanel {
         }
     }
 
-    private void gameOver() {
-        tetrisGame.getTimer().stop();
-        tetrisGame.setCanHoldPiece(false);
-        Arrays.fill(tetrisGame.getNextPieces(), null);
-        tetrisGame.setNextPiecesCount(0);
-        JOptionPane.showMessageDialog(tetrisGame, "Game Over! Final Score: " + tetrisGame.getScore(), "Tetris", JOptionPane.INFORMATION_MESSAGE);
-    }
-
     public TetrisPiece getRandomPiece() {
         TetrisPiece[] pieces = {new LPiece(), new TPiece(), new ZPiece(), new SquarePiece(), new IPiece(), new ReverseLPiece(), new ReverseZPiece()};
 
@@ -258,6 +250,40 @@ public class GamePanel extends JPanel {
         for (int col = 0; col < BOARD_WIDTH; col++) {
             board[0][col] = Color.LIGHT_GRAY;
         }
+    }
+
+    private void gameOver() {
+        tetrisGame.getTimer().stop();
+        tetrisGame.setCanHoldPiece(false);
+        Arrays.fill(tetrisGame.getNextPieces(), null);
+        tetrisGame.setNextPiecesCount(0);
+
+        JDialog gameOverDialog = new JDialog(tetrisGame, "Game Over", true);
+        gameOverDialog.setLayout(new BorderLayout());
+
+        JLabel gameOverLabel = new JLabel("<html><center>Game Over<br>Final Score: " + tetrisGame.getScore() + "</center></html>", SwingConstants.CENTER);
+        gameOverLabel.setFont(new Font("Arial", Font.BOLD, 18));
+
+        JButton newGameButton = new JButton("New Game");
+        newGameButton.setPreferredSize(new Dimension(100, 30));
+        newGameButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        newGameButton.addActionListener(e -> {
+            gameOverDialog.dispose();
+            tetrisGame.resetGame();
+        });
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.add(newGameButton);
+        buttonPanel.add(Box.createHorizontalGlue());
+
+        gameOverDialog.add(gameOverLabel, BorderLayout.CENTER);
+        gameOverDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        gameOverDialog.setSize(300, 150);
+        gameOverDialog.setLocationRelativeTo(tetrisGame);
+        gameOverDialog.setVisible(true);
     }
 
     @Override
