@@ -32,6 +32,14 @@ public class GamePanel extends JPanel {
         return board;
     }
 
+    public TetrisPiece getCurrentPiece() {
+        return currentPiece;
+    }
+
+    public int getCurrentPieceX() {
+        return currentPiece.getX();
+    }
+
     private void setupKeyListener() {
         addKeyListener(new KeyAdapter() {
             @Override
@@ -169,6 +177,21 @@ public class GamePanel extends JPanel {
     }
 
     private void dropPiece() {
+        if (tetrisGame.isGameOver()) {
+            return;
+        }
+
+        boolean canMoveDown = true;
+        while (canMoveDown) {
+            canMoveDown = movePieceDown();
+        }
+        placePieceOnBoard();
+        clearFullRows();
+        spawnPiece();
+        tetrisGame.setCanHoldPiece(true);
+    }
+
+    public void hardDropPiece() {
         if (tetrisGame.isGameOver()) {
             return;
         }
@@ -378,28 +401,5 @@ public class GamePanel extends JPanel {
         int textX = (getWidth() - fm.stringWidth("PAUSED")) / 2;
         int textY = getHeight() / 2;
         g.drawString("PAUSED", textX, textY);
-    }
-
-    public TetrisPiece getCurrentPiece() {
-        return currentPiece;
-    }
-
-    public int getCurrentPieceX() {
-        return currentPiece.getX();
-    }
-
-    public void hardDropPiece() {
-        if (tetrisGame.isGameOver()) {
-            return;
-        }
-
-        boolean canMoveDown = true;
-        while (canMoveDown) {
-            canMoveDown = movePieceDown();
-        }
-        placePieceOnBoard();
-        clearFullRows();
-        spawnPiece();
-        tetrisGame.setCanHoldPiece(true);
     }
 }

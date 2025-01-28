@@ -18,19 +18,6 @@ public abstract class TetrisPiece implements Cloneable {
 
     protected abstract void initializeColor();
 
-    public void rotate() {
-        int[][] rotatedShape = new int[shape.length][shape[0].length];
-
-        for (int i = 0; i < shape.length; i++) {
-            for (int j = 0; j < shape[0].length; j++) {
-                rotatedShape[j][shape.length - 1 - i] = shape[i][j];
-            }
-        }
-
-        shape = rotatedShape;
-        rotation = (rotation + 1) % 4;
-    }
-
     public int[][] getShape() {
         return shape;
     }
@@ -50,6 +37,10 @@ public abstract class TetrisPiece implements Cloneable {
 
     public int getY() {
         return y;
+    }
+
+    public int getRotation() {
+        return rotation;
     }
 
     public int getWidth() {
@@ -76,6 +67,19 @@ public abstract class TetrisPiece implements Cloneable {
         return rotated;
     }
 
+    public void rotate() {
+        int[][] rotatedShape = new int[shape.length][shape[0].length];
+
+        for (int i = 0; i < shape.length; i++) {
+            for (int j = 0; j < shape[0].length; j++) {
+                rotatedShape[j][shape.length - 1 - i] = shape[i][j];
+            }
+        }
+
+        shape = rotatedShape;
+        rotation = (rotation + 1) % 4;
+    }
+
     @Override
     protected TetrisPiece clone() {
         try {
@@ -88,9 +92,5 @@ public abstract class TetrisPiece implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();
         }
-    }
-
-    public int getRotation() {
-        return rotation;
     }
 }

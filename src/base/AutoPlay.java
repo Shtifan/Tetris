@@ -21,7 +21,7 @@ public class AutoPlay {
     }
 
     private void initializeAutoplayTimer() {
-        autoplayTimer = new Timer(100, e -> {
+        autoplayTimer = new Timer(50, e -> {
             if (tetrisGame.isPaused() || tetrisGame.isGameOver()) {
                 stopAutoplay();
                 return;
@@ -62,31 +62,75 @@ public class AutoPlay {
 
     private void makeBestMove() {
         Placement bestPlacement = findBestPlacement();
-        executePlacement(bestPlacement);
-        dropPiece();
+        if (bestPlacement.score != Double.NEGATIVE_INFINITY) {
+            executePlacement(bestPlacement);
+            dropPiece();
+        }
     }
 
     private Placement findBestPlacement() {
         TetrisPiece currentPiece = gamePanel.getCurrentPiece();
         Color[][] currentBoard = gamePanel.getBoard();
         Placement best = new Placement(0, 0, 0, Double.NEGATIVE_INFINITY);
+        int currentX = gamePanel.getCurrentPieceX();
 
         for (int rotation = 0; rotation < 4; rotation++) {
             TetrisPiece rotated = currentPiece.getRotated(rotation);
             int maxX = GamePanel.BOARD_WIDTH - rotated.getWidth();
-            for (int x = 0; x <= maxX; x++) {
-                int y = findDropY(currentBoard, rotated, x);
+            for (int targetX = 0; targetX <= maxX; targetX++) {
+                if (!canReachX(rotated, currentX, targetX, currentBoard)) {
+                    continue;
+                }
+
+                int y = findDropY(currentBoard, rotated, targetX);
                 if (y < 0) continue;
 
-                Color[][] simulated = simulatePlacement(currentBoard, rotated, x, y);
+                Color[][] simulated = simulatePlacement(currentBoard, rotated, targetX, y);
                 double score = evaluateBoard(simulated, y + rotated.getHeight());
                 if (score > best.score) {
-                    best = new Placement(rotation, x, y, score);
+                    best = new Placement(rotation, targetX, y, score);
                 }
             }
         }
 
         return best;
+    }
+
+    private boolean canReachX(TetrisPiece rotated, int currentX, int targetX, Color[][] board) {
+        int deltaX = targetX - currentX;
+        if (deltaX == 0) {
+            return canPlaceWithoutOverlap(rotated, currentX, board);
+        }
+
+        int step = deltaX > 0 ? 1 : -1;
+        int steps = Math.abs(deltaX);
+        int x = currentX;
+
+        for (int i = 0; i < steps; i++) {
+            x += step;
+            if (!canPlaceWithoutOverlap(rotated, x, board)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean canPlaceWithoutOverlap(TetrisPiece piece, int x, Color[][] board) {
+        for (int i = 0; i < piece.getSize(); i++) {
+            for (int j = 0; j < piece.getSize(); j++) {
+                if (piece.getShape(i, j) != 0) {
+                    int boardX = x + i;
+                    if (boardX < 0 || boardX >= GamePanel.BOARD_WIDTH || j >= GamePanel.BOARD_HEIGHT) {
+                        return false;
+                    }
+                    if (board[j][boardX] != Color.LIGHT_GRAY) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private int findDropY(Color[][] board, TetrisPiece piece, int x) {
@@ -153,9 +197,11 @@ public class AutoPlay {
     private double evaluateBoard(Color[][] board, int landingHeight) {
         int holes = 0;
         int bumpiness = 0;
-        int[] heights = new int[GamePanel.BOARD_WIDTH];
         int aggregateHeight = 0;
         int linesCleared = 0;
+        int rowTransitions = 0;
+        int columnTransitions = 0;
+        int[] heights = new int[GamePanel.BOARD_WIDTH];
 
         for (int col = 0; col < GamePanel.BOARD_WIDTH; col++) {
             for (int row = 0; row < GamePanel.BOARD_HEIGHT; row++) {
@@ -167,15 +213,17 @@ public class AutoPlay {
             aggregateHeight += heights[col];
         }
 
-        for (Color[] row : board) {
-            boolean full = true;
-            for (Color cell : row) {
-                if (cell == Color.LIGHT_GRAY) {
-                    full = false;
+        for (int row = 0; row < GamePanel.BOARD_HEIGHT; row++) {
+            boolean isFull = true;
+            for (int col = 0; col < GamePanel.BOARD_WIDTH; col++) {
+                if (board[row][col] == Color.LIGHT_GRAY) {
+                    isFull = false;
                     break;
                 }
             }
-            if (full) linesCleared++;
+            if (isFull) {
+                linesCleared++;
+            }
         }
 
         for (int col = 0; col < GamePanel.BOARD_WIDTH - 1; col++) {
@@ -193,13 +241,43 @@ public class AutoPlay {
             }
         }
 
+        for (int row = 0; row < GamePanel.BOARD_HEIGHT; row++) {
+            boolean prevCellEmpty = true;
+            for (int col = 0; col < GamePanel.BOARD_WIDTH; col++) {
+                boolean currentCellEmpty = (board[row][col] == Color.LIGHT_GRAY);
+                if (prevCellEmpty != currentCellEmpty) {
+                    rowTransitions++;
+                }
+                prevCellEmpty = currentCellEmpty;
+            }
+            if (!prevCellEmpty) {
+                rowTransitions++;
+            }
+        }
+
+        for (int col = 0; col < GamePanel.BOARD_WIDTH; col++) {
+            boolean prevCellEmpty = true;
+            for (int row = 0; row < GamePanel.BOARD_HEIGHT; row++) {
+                boolean currentCellEmpty = (board[row][col] == Color.LIGHT_GRAY);
+                if (prevCellEmpty != currentCellEmpty) {
+                    columnTransitions++;
+                }
+                prevCellEmpty = currentCellEmpty;
+            }
+            if (!prevCellEmpty) {
+                columnTransitions++;
+            }
+        }
+
         double a = -0.510066;
         double b = -0.184483;
         double c = -0.35663;
         double d = 0.760666;
-        double e = -0.3;
+        double e = 0.3;
+        double f = -0.5;
+        double g = -0.5;
 
-        return a * holes + b * bumpiness + c * aggregateHeight + d * linesCleared + e * landingHeight;
+        return a * holes + b * bumpiness + c * aggregateHeight + d * linesCleared + e * landingHeight + f * rowTransitions + g * columnTransitions;
     }
 
     private static class Placement {
