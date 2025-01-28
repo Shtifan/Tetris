@@ -50,7 +50,6 @@ public class TetrisGame extends JFrame {
         JButton exitButton = createButton("Exit", e -> System.exit(0));
 
         AutoPlay autoplay = new AutoPlay(this, gamePanel, autoplayButton);
-
         autoplayButton.addActionListener(e -> autoplay.toggleAutoplay());
 
         newGameButton.setBounds(10, 10, 120, 40);
@@ -102,9 +101,19 @@ public class TetrisGame extends JFrame {
                 gamePanel.spawnPiece();
                 canHoldPiece = true;
             }
+            updateTimerSpeed();
             gamePanel.repaint();
+
+            if (gameOver) {
+                timer.stop();
+            }
         });
         timer.start();
+    }
+
+    private void updateTimerSpeed() {
+        int newDelay = Math.max(100, 500 - (score / 100) * 50);
+        timer.setDelay(newDelay);
     }
 
     public void resetGame() {
@@ -124,6 +133,14 @@ public class TetrisGame extends JFrame {
         timer.start();
         pauseButton.setText("Pause");
         gamePanel.requestFocusInWindow();
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+        if (gameOver) {
+            timer.stop();
+            JOptionPane.showMessageDialog(this, "Game Over! Your score: " + score, "Game Over", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     public boolean isPaused() {

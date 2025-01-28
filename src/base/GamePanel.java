@@ -10,8 +10,8 @@ import java.util.Random;
 import pieces.*;
 
 public class GamePanel extends JPanel {
-    private static final int BOARD_WIDTH = 10;
-    private static final int BOARD_HEIGHT = 20;
+    public static final int BOARD_WIDTH = 10;
+    public static final int BOARD_HEIGHT = 20;
     private static final int TILE_SIZE = 40;
 
     private TetrisPiece currentPiece;
@@ -36,6 +36,9 @@ public class GamePanel extends JPanel {
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
+                if (tetrisGame.isGameOver() || tetrisGame.isPaused()) {
+                    return;
+                }
                 if (!tetrisGame.isPaused() && !tetrisGame.isGameOver()) {
                     handleKeyPress(e.getKeyCode());
                 }
@@ -253,37 +256,16 @@ public class GamePanel extends JPanel {
     }
 
     private void gameOver() {
+        if (tetrisGame.isGameOver()) {
+            return;
+        }
+
+        tetrisGame.setGameOver(true);
         tetrisGame.getTimer().stop();
         tetrisGame.setCanHoldPiece(false);
         Arrays.fill(tetrisGame.getNextPieces(), null);
         tetrisGame.setNextPiecesCount(0);
-
-        JDialog gameOverDialog = new JDialog(tetrisGame, "Game Over", true);
-        gameOverDialog.setLayout(new BorderLayout());
-
-        JLabel gameOverLabel = new JLabel("<html><center>Game Over<br>Final Score: " + tetrisGame.getScore() + "</center></html>", SwingConstants.CENTER);
-        gameOverLabel.setFont(new Font("Arial", Font.BOLD, 18));
-
-        JButton newGameButton = new JButton("New Game");
-        newGameButton.setPreferredSize(new Dimension(100, 30));
-        newGameButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        newGameButton.addActionListener(e -> {
-            gameOverDialog.dispose();
-            tetrisGame.resetGame();
-        });
-
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-        buttonPanel.add(Box.createHorizontalGlue());
-        buttonPanel.add(newGameButton);
-        buttonPanel.add(Box.createHorizontalGlue());
-
-        gameOverDialog.add(gameOverLabel, BorderLayout.CENTER);
-        gameOverDialog.add(buttonPanel, BorderLayout.SOUTH);
-
-        gameOverDialog.setSize(300, 150);
-        gameOverDialog.setLocationRelativeTo(tetrisGame);
-        gameOverDialog.setVisible(true);
+        tetrisGame.setHeldPiece(null);
     }
 
     @Override
@@ -396,5 +378,28 @@ public class GamePanel extends JPanel {
         int textX = (getWidth() - fm.stringWidth("PAUSED")) / 2;
         int textY = getHeight() / 2;
         g.drawString("PAUSED", textX, textY);
+    }
+
+    public TetrisPiece getCurrentPiece() {
+        return currentPiece;
+    }
+
+    public int getCurrentPieceX() {
+        return currentPiece.getX();
+    }
+
+    public void hardDropPiece() {
+        if (tetrisGame.isGameOver()) {
+            return;
+        }
+
+        boolean canMoveDown = true;
+        while (canMoveDown) {
+            canMoveDown = movePieceDown();
+        }
+        placePieceOnBoard();
+        clearFullRows();
+        spawnPiece();
+        tetrisGame.setCanHoldPiece(true);
     }
 }
