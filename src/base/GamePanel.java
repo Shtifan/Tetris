@@ -120,13 +120,15 @@ public class GamePanel extends JPanel {
     }
 
     public TetrisPiece getRandomPiece() {
-        TetrisPiece[] pieces = {new LPiece(), new TPiece(), new ZPiece(), new SquarePiece(), new IPiece(), new ReverseLPiece(), new ReverseZPiece()};
+        TetrisPiece[] pieces = { new LPiece(), new TPiece(), new ZPiece(), new SquarePiece(), new IPiece(),
+                new ReverseLPiece(), new ReverseZPiece() };
 
         return pieces[random.nextInt(pieces.length)];
     }
 
     private void holdPiece() {
-        if (!tetrisGame.isCanHoldPiece()) return;
+        if (!tetrisGame.isCanHoldPiece())
+            return;
 
         TetrisPiece temp = tetrisGame.getHeldPiece();
         tetrisGame.setHeldPiece(currentPiece);
@@ -166,7 +168,7 @@ public class GamePanel extends JPanel {
     }
 
     private boolean tryWallKick() {
-        int[] offsets = {1, -1, 2, -2};
+        int[] offsets = { 1, -1, 2, -2 };
         for (int offset : offsets) {
             if (canPlacePiece(currentPiece, currentPiece.getX() + offset, currentPiece.getY())) {
                 currentPiece.setPosition(currentPiece.getX() + offset, currentPiece.getY());
@@ -255,7 +257,7 @@ public class GamePanel extends JPanel {
     }
 
     private void updateScore(int rowsCleared) {
-        int[] multipliers = {0, 100, 300, 500, 800};
+        int[] multipliers = { 0, 100, 300, 500, 800 };
         if (rowsCleared > 0) {
             tetrisGame.setScore(tetrisGame.getScore() + multipliers[Math.min(rowsCleared, 4)]);
         }
@@ -300,7 +302,8 @@ public class GamePanel extends JPanel {
         drawHeldPiece(g);
         drawNextPieces(g);
         drawScore(g);
-        if (tetrisGame.isPaused()) drawPauseOverlay(g);
+        if (tetrisGame.isPaused())
+            drawPauseOverlay(g);
     }
 
     private void drawBackground(Graphics g) {
@@ -333,7 +336,8 @@ public class GamePanel extends JPanel {
     }
 
     private void drawPiece(Graphics g) {
-        if (currentPiece == null) return;
+        if (currentPiece == null)
+            return;
 
         int xOffset = (getWidth() - BOARD_WIDTH * TILE_SIZE) / 2;
         int yOffset = (getHeight() - BOARD_HEIGHT * TILE_SIZE) / 2;

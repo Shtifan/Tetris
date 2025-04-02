@@ -83,7 +83,8 @@ public class AutoPlay {
                 }
 
                 int y = findDropY(currentBoard, rotated, targetX);
-                if (y < 0) continue;
+                if (y < 0)
+                    continue;
 
                 Color[][] simulated = simulatePlacement(currentBoard, rotated, targetX, y);
                 double score = evaluateBoard(simulated, y + rotated.getHeight());
@@ -142,7 +143,8 @@ public class AutoPlay {
     }
 
     private boolean canMoveDown(Color[][] board, TetrisPiece piece, int x, int y) {
-        if (y + piece.getHeight() >= GamePanel.BOARD_HEIGHT) return false;
+        if (y + piece.getHeight() >= GamePanel.BOARD_HEIGHT)
+            return false;
         for (int i = 0; i < piece.getSize(); i++) {
             for (int j = 0; j < piece.getSize(); j++) {
                 if (piece.getShape(i, j) != 0) {
@@ -277,7 +279,8 @@ public class AutoPlay {
         double f = -0.5;
         double g = -0.5;
 
-        return a * holes + b * bumpiness + c * aggregateHeight + d * linesCleared + e * landingHeight + f * rowTransitions + g * columnTransitions;
+        return a * holes + b * bumpiness + c * aggregateHeight + d * linesCleared + e * landingHeight
+                + f * rowTransitions + g * columnTransitions;
     }
 
     private static class Placement {

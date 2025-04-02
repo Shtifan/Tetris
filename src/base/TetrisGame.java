@@ -15,6 +15,7 @@ public class TetrisGame extends JFrame {
     private boolean canHoldPiece;
     private TetrisPiece[] nextPieces;
     private int nextPiecesCount;
+    private boolean autoplayActive;
 
     public TetrisGame() {
         super("Tetris");
@@ -50,7 +51,10 @@ public class TetrisGame extends JFrame {
         JButton exitButton = createButton("Exit", e -> System.exit(0));
 
         AutoPlay autoplay = new AutoPlay(this, gamePanel, autoplayButton);
-        autoplayButton.addActionListener(e -> autoplay.toggleAutoplay());
+        autoplayButton.addActionListener(e -> {
+            autoplay.toggleAutoplay();
+            updateTimerSpeed();
+        });
 
         newGameButton.setBounds(10, 10, 120, 40);
         pauseButton.setBounds(140, 10, 120, 40);
@@ -81,7 +85,8 @@ public class TetrisGame extends JFrame {
     }
 
     private void togglePause() {
-        if (gameOver) return;
+        if (gameOver)
+            return;
 
         isPaused = !isPaused;
         pauseButton.setText(isPaused ? "Resume" : "Pause");
@@ -94,7 +99,7 @@ public class TetrisGame extends JFrame {
     }
 
     private void initializeTimer() {
-        timer = new Timer(500, e -> {
+        timer = new Timer(100, e -> {
             if (!gamePanel.movePieceDown()) {
                 gamePanel.placePieceOnBoard();
                 gamePanel.clearFullRows();
@@ -112,8 +117,26 @@ public class TetrisGame extends JFrame {
     }
 
     private void updateTimerSpeed() {
-        int newDelay = Math.max(100, 500 - (score / 100) * 50);
+        int newDelay;
+        if (autoplayActive) {
+            // Fast speed for autoplay
+            newDelay = 50;
+        } else {
+            // Normal speed based on score for manual play
+            newDelay = Math.max(300, 500 - (score / 50) * 10);
+        }
         timer.setDelay(newDelay);
+    }
+
+    private void updateScore(int rowsCleared) {
+        int[] multipliers = { 0, 100, 300, 500, 800, 1200 };
+        if (rowsCleared > 0) {
+            int baseScore = multipliers[Math.min(rowsCleared, 5)];
+            if (rowsCleared >= 4) {
+                baseScore *= 1.5;
+            }
+            score += baseScore;
+        }
     }
 
     public void resetGame() {
@@ -139,7 +162,8 @@ public class TetrisGame extends JFrame {
         this.gameOver = gameOver;
         if (gameOver) {
             timer.stop();
-            JOptionPane.showMessageDialog(this, "Game Over! Your score: " + score, "Game Over", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Game Over! Your score: " + score, "Game Over",
+                    JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -189,6 +213,15 @@ public class TetrisGame extends JFrame {
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public void setAutoplayActive(boolean active) {
+        this.autoplayActive = active;
+        updateTimerSpeed();
+    }
+
+    public boolean isAutoplayActive() {
+        return autoplayActive;
     }
 
     public static void main(String[] args) {

@@ -7,7 +7,7 @@ import base.TetrisPiece;
 public class SquarePiece extends TetrisPiece {
     @Override
     protected void initializeShape() {
-        shape = new int[][]{{1, 1}, {1, 1}};
+        shape = new int[][] { { 1, 1 }, { 1, 1 } };
     }
 
     @Override
