@@ -15,7 +15,6 @@ public class TetrisGame extends JFrame {
     private boolean canHoldPiece;
     private TetrisPiece[] nextPieces;
     private int nextPiecesCount;
-    private boolean autoplayActive;
 
     public TetrisGame() {
         super("Tetris");
@@ -47,25 +46,14 @@ public class TetrisGame extends JFrame {
 
         JButton newGameButton = createButton("New Game", e -> resetGame());
         pauseButton = createButton("Pause", e -> togglePause());
-        JButton autoplayButton = createButton("Autoplay", null);
         JButton exitButton = createButton("Exit", e -> System.exit(0));
-
-        AutoPlay autoplay = new AutoPlay(this, gamePanel, autoplayButton);
-        autoplayButton.addActionListener(e -> {
-            autoplay.toggleAutoplay();
-            updateTimerSpeed();
-        });
 
         newGameButton.setBounds(10, 10, 120, 40);
         pauseButton.setBounds(140, 10, 120, 40);
         exitButton.setBounds(270, 10, 120, 40);
 
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        autoplayButton.setBounds((int) screenSize.getWidth() - 130, 10, 120, 40);
-
         gamePanel.add(newGameButton);
         gamePanel.add(pauseButton);
-        gamePanel.add(autoplayButton);
         gamePanel.add(exitButton);
 
         mainContainer.add(gamePanel, BorderLayout.CENTER);
@@ -99,7 +87,7 @@ public class TetrisGame extends JFrame {
     }
 
     private void initializeTimer() {
-        timer = new Timer(100, e -> {
+        timer = new Timer(500, e -> {
             if (!gamePanel.movePieceDown()) {
                 gamePanel.placePieceOnBoard();
                 gamePanel.clearFullRows();
@@ -117,26 +105,8 @@ public class TetrisGame extends JFrame {
     }
 
     private void updateTimerSpeed() {
-        int newDelay;
-        if (autoplayActive) {
-            // Fast speed for autoplay
-            newDelay = 50;
-        } else {
-            // Normal speed based on score for manual play
-            newDelay = Math.max(300, 500 - (score / 50) * 10);
-        }
+        int newDelay = Math.max(300, 500 - (score / 50) * 10);
         timer.setDelay(newDelay);
-    }
-
-    private void updateScore(int rowsCleared) {
-        int[] multipliers = { 0, 100, 300, 500, 800, 1200 };
-        if (rowsCleared > 0) {
-            int baseScore = multipliers[Math.min(rowsCleared, 5)];
-            if (rowsCleared >= 4) {
-                baseScore *= 1.5;
-            }
-            score += baseScore;
-        }
     }
 
     public void resetGame() {
@@ -213,15 +183,6 @@ public class TetrisGame extends JFrame {
 
     public void setScore(int score) {
         this.score = score;
-    }
-
-    public void setAutoplayActive(boolean active) {
-        this.autoplayActive = active;
-        updateTimerSpeed();
-    }
-
-    public boolean isAutoplayActive() {
-        return autoplayActive;
     }
 
     public static void main(String[] args) {
