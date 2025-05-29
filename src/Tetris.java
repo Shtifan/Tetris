@@ -11,7 +11,7 @@ public class Tetris extends JFrame {
     }
 
     private void initUI() {
-        setTitle("Tetris - Original Look AI");
+        setTitle("Tetris");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setResizable(false);
 
