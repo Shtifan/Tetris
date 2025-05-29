@@ -1,12 +1,8 @@
-# Tetris Game
+# Tetris
 
-## Instalation
+## Java
 
-Intellij ide
-
-JDK21
-
-`git clone https://github.com/Shtifan/Tetris`
+JDK21 Java Swing
 
 ## Contributors 
 
